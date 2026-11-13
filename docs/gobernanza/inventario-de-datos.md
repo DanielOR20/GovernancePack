@@ -4,22 +4,17 @@ No se puede gobernar lo que no se sabe que se tiene. Una fila por cada dato que 
 
 | Dato | ¿Personal? | Categoría (Ley 8968, art. 9) | De dónde viene | Dónde se guarda | ¿Sale a un tercero? ¿A quién? | Cuánto se conserva | Quién puede verlo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| <dato> | <Sí o No> | <categoría, o «No aplica»> | <origen> | <servicio y tabla> | <No, o a quién y para qué> | <plazo> | <roles> |
-| <dato> | <Sí o No> | <categoría, o «No aplica»> | <origen> | <servicio y tabla> | <No, o a quién y para qué> | <plazo> | <roles> |
-
-<!--
-Ejemplo de fila bien llenada:
-| Texto del CV | Sí | Acceso restringido | Lo sube el usuario | Supabase Storage | Sí: proveedor de IA, solo para extraer campos | 30 días | El usuario |
-
-Categorías de la Ley 8968 (art. 9):
-- Sensibles: origen racial o étnico, opiniones políticas, convicciones religiosas, salud,
-  vida y orientación sexual; la definición del art. 3 incluye la condición socioeconómica
-  y la información biomédica o genética. Si aparece uno, expliquen en un ADR por qué lo necesitan.
-- Acceso restringido: de interés solo para la persona o la administración (correo, teléfono, dirección).
-- Acceso irrestricto: los que constan en bases públicas de acceso general.
-- Crediticios: comportamiento crediticio de la persona.
--->
+| Perfil de usuario del sistema (`id`, `name`, `email`, `role`, `department` en `src/config/roles.js` y `AdminFinancialView.jsx`) | Sí | Acceso restringido | Cuentas precargadas en `MOCK_USERS` y gestión administrativa en `AdminFinancialView.jsx` | Estado en memoria de React (`AuthContext.jsx`, `systemUsers`) y payload en `localStorage` (`soldecasa_jwt_token`) | No (el avatar de demostración carga una imagen pública de Unsplash, sin enviar datos del usuario) | Mientras dure la sesión en el navegador o hasta que el Super Admin elimine el usuario | El propio usuario autenticado y el rol `admin` (Super Admin) |
+| Datos de instalación del propietario (`installationAddress`, `solarCapacity`, métricas de ahorro y generación en `ClientDashboardView.jsx`) | Sí | Acceso restringido | Expediente técnico del propietario registrado tras la instalación solar | Estado de aplicación en `src/config/roles.js` y `ClientDashboardView.jsx` | No | Durante la vigencia del contrato de microgeneración y garantía técnica | El propietario titular (`user`), asesores (`editor`) y `admin` |
+| Expediente de prospecto y visita técnica (`id`, `cliente`, `telefono`, `ubicacion`, `factura`, `estadoVisita`, `fechaVisita`, `asesor` en `OperationsView.jsx`) | Sí | Acceso restringido | Formulario «Registrar Nuevo Prospecto Solar» completado por el asesor o solicitud de visita técnica | Estado en memoria del módulo operativo (`leads` en `OperationsView.jsx`) | No | Hasta el cierre del proyecto o eliminación manual por el rol `admin` | Roles `editor` (Gestor / Asesor Solar) y `admin` (Super Admin) |
+| Código de referido e historial de vecinos (`referralCode`, enlace `soldecasa.com/ref/...` y estado de referidos en `ClientDashboardView.jsx`) | Sí | Acceso restringido | Generado al dar de alta al propietario embajador y actualizado según avance de instalaciones vecinales | Estado de aplicación (`MOCK_USERS`, `ClientDashboardView.jsx`) y token JWT en `localStorage` | Sí: solo si el propietario decide voluntariamente compartir su enlace o cálculo mediante `wa.me` hacia WhatsApp | Mientras la cuenta del propietario embajador permanezca activa | El propietario titular (`user`) y el rol `admin` |
+| Token de sesión JWT (`soldecasa_jwt_token` con `sub`, `email`, `name`, `role`, `iat`, `exp` en `src/utils/jwt.js`) | Sí | Acceso restringido | Generado localmente por `generateJwt()` al iniciar sesión o simular rol en `AuthContext.jsx` | `localStorage` del navegador bajo la clave `soldecasa_jwt_token` | No | 8 horas desde su emisión (`exp: now + 3600 * 8`) o hasta ejecutar `logout()` | El usuario en su navegador (inspeccionable en `RoleSwitcherModal.jsx`) |
+| Simulación de factura eléctrica y tipo de techo (`montoFactura`, `tipoTecho`, `consumoKwh`, `panelesNecesarios` en `CalculatorView.jsx`) | No | No aplica | Ingresado de forma anónima por el visitante o vecino mediante el control deslizante en la calculadora pública | Estado local efímero de React en `CalculatorView.jsx` (no se persiste sin registro previo) | Sí: únicamente si el usuario copia voluntariamente el resumen al portapapeles para compartirlo por WhatsApp | Solo mientras la pestaña de la calculadora permanece abierta | El visitante o usuario que ejecuta la simulación en su pantalla |
+| Parámetros globales del algoritmo solar (`tarifaKwh`, `bonoReferido`, `factorSolar`, `margenMinimo` en `AdminFinancialView.jsx`) | No | No aplica | Configurados por la administración general según tarifas promedio ICE/CNFL y costos operativos | Estado del componente `AdminFinancialView.jsx` y constantes de cálculo en `CalculatorView.jsx` | No | Indefinido mientras opere el sistema (actualizable en caliente por `admin`) | Lectura indirecta en cálculos públicos; edición exclusiva del rol `admin` |
 
 ## Lo que NO recolectamos
 
-- <dato que decidieron no pedir>: <por qué no lo necesitan>
+- Número de cédula de identidad o documento migratorio (DIMEX): no es necesario para simular el ahorro solar en `CalculatorView.jsx` ni para agendar una visita técnica preliminar en `OperationsView.jsx`.
+- Números de tarjetas de crédito, cuentas IBAN o historial crediticio: los pagos de contratos y la acreditación de bonos de referidos (`₡50.000`) se liquidan fuera de la plataforma web mediante facturación formal.
+- Coordenadas GPS exactas o lectura en tiempo real de medidores inteligentes: la ubicación se registra únicamente como referencia cantonal o residencial (por ejemplo, «San Rafael, Alajuela») y la viabilidad real se confirma en la inspección técnica presencial.
+- Contraseñas en texto plano ni datos sensibles (salud, religión, ideología o biometría): ningún flujo del sistema requiere categorías sensibles de la Ley 8968 para dimensionar paneles solares ni gestionar referidos.
